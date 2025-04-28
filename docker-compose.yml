@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: halen
+      POSTGRES_PASSWORD: halen123
+      POSTGRES_DB: halen
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U halen"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    ports:
+      - "3001:3001"
+    environment:
+      DATABASE_URL: "postgresql://halen:halen123@postgres:5432/halen?schema=public"
+      NODE_ENV: development
+    volumes:
+      - ./backend:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
